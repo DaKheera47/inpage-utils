@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1"
+    />
+    <title>Unicode ↔ InPage Converter</title>
+
+    <!-- BeerCSS (Material Design 3) -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/beercss@3.13.0/dist/cdn/beer.min.css"
+      rel="stylesheet"
+    />
+    <script
+      type="module"
+      src="https://cdn.jsdelivr.net/npm/beercss@3.13.0/dist/cdn/beer.min.js"
+    ></script>
+    <script
+      type="module"
+      src="https://cdn.jsdelivr.net/npm/material-dynamic-colors@1.1.2/dist/cdn/material-dynamic-colors.min.js"
+    ></script>
+
+    <style>
+      textarea {
+        unicode-bidi: plaintext;
+        font-size: 1.05rem;
+        line-height: 1.6;
+        min-height: 16rem;
+        resize: vertical;
+      }
+      .mono {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+          "Liberation Mono", "Courier New", monospace;
+      }
+      .hint {
+        opacity: 0.8;
+      }
+      .tight {
+        margin-top: 0.25rem;
+      }
+      #perf {
+        margin-top: 0.5rem;
+      }
+    </style>
+  </head>
+
+  <body class="dark">
+    <header class="primary">
+      <nav>
+        <h5
+          class="max"
+          id="headerTitle"
+        >
+          Unicode ↔ InPage Converter
+        </h5>
+
+        <button
+          class="circle transparent"
+          id="clearBtn"
+          title="Clear"
+        >
+          <i>delete</i>
+        </button>
+      </nav>
+    </header>
+
+    <main class="responsive large-padding">
+      <div class="grid middle-align">
+        <div class="s12 m5">
+          <article class="round border">
+            <div class="padding">
+              <div class="row middle">
+                <h6
+                  class="max"
+                  id="inputTitle"
+                >
+                  InPage
+                </h6>
+                <button
+                  class="chip"
+                  id="pasteBtn"
+                  title="Paste from clipboard"
+                >
+                  <i>content_paste</i><span>Paste</span>
+                </button>
+              </div>
+              <div
+                class="small hint tight"
+                id="inputMeta"
+              >
+                0 chars
+              </div>
+            </div>
+
+            <div class="field textarea border">
+              <textarea
+                id="input"
+                class="mono"
+                placeholder="Paste text here…"
+              ></textarea>
+            </div>
+
+            <div class="padding left-align row left">
+              <label class="switch">
+                <input
+                  id="autoToggle"
+                  type="checkbox"
+                  checked
+                />
+                <span></span>
+              </label>
+              <span class="small">Auto convert</span>
+            </div>
+          </article>
+        </div>
+
+        <div class="s12 m2 center-align">
+          <button
+            class="circle extra transparent"
+            id="swapBtn"
+            title="Swap direction"
+          >
+            <i>swap_horiz</i>
+          </button>
+        </div>
+
+        <div class="s12 m5">
+          <article class="round border">
+            <div class="padding">
+              <div class="row middle">
+                <h6
+                  class="max"
+                  id="outputTitle"
+                >
+                  Urdu Unicode
+                </h6>
+                <button
+                  class="chip"
+                  id="copyBtn"
+                  title="Copy output"
+                >
+                  <i>content_copy</i><span>Copy</span>
+                </button>
+              </div>
+              <div
+                class="small hint tight"
+                id="outputMeta"
+              >
+                0 chars
+              </div>
+            </div>
+
+            <div class="field textarea border">
+              <textarea
+                id="output"
+                placeholder="Output…"
+              ></textarea>
+            </div>
+
+            <div class="padding hint small">
+              Mode: <b id="modeText">InPage → Unicode</b>
+            </div>
+          </article>
+        </div>
+      </div>
+
+      <article class="round border padding center-align">
+        <button
+          class="button"
+          id="convertBtn"
+        >
+          <i>bolt</i><span>Convert</span>
+        </button>
+        <div
+          class="small mono"
+          id="perf"
+        ></div>
+      </article>
+    </main>
+
+    <script>
+      (() => {
+        // =========================
+        // Mapping tables (ported from Converter.cpp)
+        // =========================
+        const ITU = new Array(65536); // index by 2nd code unit after \u0004
+        const UTI = new Array(65536); // index by Unicode BMP code unit
+
+        ITU[32] = "\u0020";
+        ITU[129] = "\u0627";
+        ITU[141] = "\u0630";
+        ITU[143] = "\u0691";
+        ITU[144] = "\u0632";
+        ITU[157] = "\u06AF";
+        ITU[160] = "\u0646";
+        ITU[161] = "\u06BA";
+        ITU[162] = "\u0648";
+        ITU[163] = "\u0626";
+        ITU[164] = "\u06CC";
+        ITU[165] = "\u06D2";
+        ITU[166] = "\u06C1";
+        ITU[167] = "\u06BE";
+        ITU[168] = "\u064D";
+        ITU[169] = "\u0020";
+        ITU[170] = "\u0650";
+        ITU[171] = "\u064E";
+        ITU[172] = "\u064F";
+        ITU[173] = "\u0651";
+        ITU[174] = "\u0611";
+        ITU[176] = "\u0656";
+        ITU[177] = "\u0652";
+        ITU[179] = "\u0653";
+        ITU[180] = "";
+        ITU[181] = "\u064C";
+        ITU[184] = "\u064A";
+        ITU[185] = "\u06C3";
+        ITU[189] = "\u0670";
+        ITU[190] = "\u0657";
+        ITU[199] = "\u064B";
+        ITU[207] = "\u0614";
+        ITU[208] = "\u06F0";
+        ITU[209] = "\u06F1";
+        ITU[210] = "\u06F2";
+        ITU[211] = "\u06F3";
+        ITU[212] = "\u06F4";
+        ITU[213] = "\u06F5";
+        ITU[214] = "\u06F6";
+        ITU[215] = "\u06F7";
+        ITU[216] = "\u06F8";
+        ITU[217] = "\u06F9";
+        ITU[218] = "\u0021";
+        ITU[225] = "\u0029";
+        ITU[226] = "\u0028";
+        ITU[230] = "\u0613";
+        ITU[231] = "\u0612";
+        ITU[233] = "\u003A";
+        ITU[234] = "\u061B";
+        ITU[237] = "\u060C";
+        ITU[238] = "\u061F";
+        ITU[241] = "\u002F";
+        ITU[242] = "\u060E";
+        ITU[243] = "\u06D4";
+        ITU[246] = "\uFDFA";
+        ITU[247] = "\u0601";
+        ITU[248] = "\u0610";
+        ITU[249] = "\u002C";
+        ITU[250] = "\u005B";
+        ITU[251] = "\u005D";
+        ITU[252] = "\u002E";
+        ITU[253] = "\u2018";
+        ITU[254] = "\u2019";
+        ITU[338] = "\u0688";
+        ITU[339] = "\u06A9";
+        ITU[352] = "\u062E";
+        ITU[353] = "\u0641";
+        ITU[376] = "\u0645";
+        ITU[381] = "\u0631";
+        ITU[382] = "\u0644";
+        ITU[402] = "\u067E";
+        ITU[710] = "\u0686";
+        ITU[732] = "\u0639";
+        ITU[8211] = "\u0637";
+        ITU[8212] = "\u0638";
+        ITU[8216] = "\u0698";
+        ITU[8217] = "\u0633";
+        ITU[8218] = "\u0628";
+        ITU[8220] = "\u0634";
+        ITU[8221] = "\u0635";
+        ITU[8222] = "\u062A";
+        ITU[8224] = "\u062B";
+        ITU[8225] = "\u062C";
+        ITU[8226] = "\u0636";
+        ITU[8230] = "\u0679";
+        ITU[8240] = "\u062D";
+        ITU[8249] = "\u062F";
+        ITU[8250] = "\u0642";
+        ITU[8482] = "\u063A";
+
+        UTI[32] = "\u0004\u0020";
+        UTI[33] = "\u0004\u00DA";
+        UTI[40] = "\u0004\u00E2";
+        UTI[41] = "\u0004\u00E1";
+        UTI[44] = "\u0004\u00F9";
+        UTI[46] = "\u0004\u00FC";
+        UTI[47] = "\u0004\u00F1";
+        UTI[58] = "\u0004\u00E9";
+        UTI[91] = "\u0004\u00FA";
+        UTI[93] = "\u0004\u00FB";
+        UTI[1537] = "\u0004\u00F7";
+        UTI[1548] = "\u0004\u00ED";
+        UTI[1550] = "\u0004\u00F2";
+        UTI[1552] = "\u0004\u00F8";
+        UTI[1553] = "\u0004\u00AE";
+        UTI[1554] = "\u0004\u00E7";
+        UTI[1555] = "\u0004\u00E6";
+        UTI[1556] = "\u0004\u00CF";
+        UTI[1563] = "\u0004\u00EA";
+        UTI[1567] = "\u0004\u00EE";
+        UTI[1569] = "\u0004\u00A3";
+        UTI[1570] = "\u0004\u0081\u0004\u00B3";
+        UTI[1571] = "\u0004\u0081\u0004\u00BF";
+        UTI[1572] = "\u0004\u00A2\u0004\u00BF";
+        UTI[1574] = "\u0004\u00A3";
+        UTI[1575] = "\u0004\u0081";
+        UTI[1576] = "\u0004\u201A";
+        UTI[1578] = "\u0004\u201E";
+        UTI[1579] = "\u0004\u2020";
+        UTI[1580] = "\u0004\u2021";
+        UTI[1581] = "\u0004\u2030";
+        UTI[1582] = "\u0004\u0160";
+        UTI[1583] = "\u0004\u2039";
+        UTI[1584] = "\u0004\u008D";
+        UTI[1585] = "\u0004\u017D";
+        UTI[1586] = "\u0004\u0090";
+        UTI[1587] = "\u0004\u2019";
+        UTI[1588] = "\u0004\u201C";
+        UTI[1589] = "\u0004\u201D";
+        UTI[1590] = "\u0004\u2022";
+        UTI[1591] = "\u0004\u2013";
+        UTI[1592] = "\u0004\u2014";
+        UTI[1593] = "\u0004\u02DC";
+        UTI[1594] = "\u0004\u2122";
+        UTI[1601] = "\u0004\u0161";
+        UTI[1602] = "\u0004\u203A";
+        UTI[1604] = "\u0004\u017E";
+        UTI[1605] = "\u0004\u0178";
+        UTI[1606] = "\u0004\u00A0";
+        UTI[1608] = "\u0004\u00A2";
+        UTI[1610] = "\u0004\u00B8";
+        UTI[1611] = "\u0004\u00C7";
+        UTI[1612] = "\u0004\u00B5";
+        UTI[1613] = "\u0004\u00A8";
+        UTI[1614] = "\u0004\u00AB";
+        UTI[1615] = "\u0004\u00AC";
+        UTI[1616] = "\u0004\u00AA";
+        UTI[1617] = "\u0004\u00AD";
+        UTI[1618] = "\u0004\u00B1";
+        UTI[1619] = "\u0004\u00B3";
+        UTI[1622] = "\u0004\u00B0";
+        UTI[1623] = "\u0004\u00BE";
+        UTI[1648] = "\u0004\u00BD";
+        UTI[1657] = "\u0004\u2026";
+        UTI[1662] = "\u0004\u0192";
+        UTI[1670] = "\u0004\u02C6";
+        UTI[1672] = "\u0004\u0152";
+        UTI[1681] = "\u0004\u008F";
+        UTI[1688] = "\u0004\u2018";
+        UTI[1705] = "\u0004\u0153";
+        UTI[1711] = "\u0004\u009D";
+        UTI[1722] = "\u0004\u00A1";
+        UTI[1726] = "\u0004\u00A7";
+        UTI[1729] = "\u0004\u00A6";
+        UTI[1731] = "\u0004\u00B9";
+        UTI[1740] = "\u0004\u00A4";
+        UTI[1746] = "\u0004\u00A5";
+        UTI[1748] = "\u0004\u00F3";
+        UTI[1776] = "\u0004\u00D0";
+        UTI[1777] = "\u0004\u00D1";
+        UTI[1778] = "\u0004\u00D2";
+        UTI[1779] = "\u0004\u00D3";
+        UTI[1780] = "\u0004\u00D4";
+        UTI[1781] = "\u0004\u00D5";
+        UTI[1782] = "\u0004\u00D6";
+        UTI[1783] = "\u0004\u00D7";
+        UTI[1784] = "\u0004\u00D8";
+        UTI[1785] = "\u0004\u00D9";
+        UTI[8216] = "\u0004\u00FD";
+        UTI[8217] = "\u0004\u00FE";
+        UTI[65018] = "\u0004\u00F6";
+
+        // =========================
+        // Fast converters (no regex)
+        // =========================
+        function inpageToUnicode(s) {
+          // Quick exit
+          if (!s || s.indexOf("\u0004") === -1) return s || "";
+          const n = s.length;
+          let out = "";
+          for (let i = 0; i < n; ) {
+            const c0 = s.charCodeAt(i);
+
+            // Special 4-code-unit sequences (must happen before 2-unit mapping)
+            if (c0 === 0x0004 && i + 3 < n) {
+              const c1 = s.charCodeAt(i + 1);
+              const c2 = s.charCodeAt(i + 2);
+              const c3 = s.charCodeAt(i + 3);
+              if (c2 === 0x0004) {
+                // \u0004\u00A4\u0004\u00BF -> \u06CC\u0626
+                if (c1 === 0x00a4 && c3 === 0x00bf) {
+                  out += "\u06CC\u0626";
+                  i += 4;
+                  continue;
+                }
+                // \u0004\u0081\u0004\u00BF -> \u0623
+                if (c1 === 0x0081 && c3 === 0x00bf) {
+                  out += "\u0623";
+                  i += 4;
+                  continue;
+                }
+                // \u0004\u00A2\u0004\u00BF -> \u0624
+                if (c1 === 0x00a2 && c3 === 0x00bf) {
+                  out += "\u0624";
+                  i += 4;
+                  continue;
+                }
+                // \u0004\u0081\u0004\u00B3 -> \u0622
+                if (c1 === 0x0081 && c3 === 0x00b3) {
+                  out += "\u0622";
+                  i += 4;
+                  continue;
+                }
+                // \u0004\u0081\u0004\u0008 -> \u0627\u0004\u0008 (keeps control bytes)
+                if (c1 === 0x0081 && c3 === 0x0008) {
+                  out += "\u0627\u0004\u0008";
+                  i += 4;
+                  continue;
+                }
+              }
+            }
+
+            // Regular 2-code-unit InPage pattern: \u0004 + byte
+            if (c0 === 0x0004 && i + 1 < n) {
+              const c1 = s.charCodeAt(i + 1);
+              const rep = ITU[c1];
+              if (rep !== undefined) {
+                out += rep;
+                i += 2;
+                continue;
+              }
+            }
+
+            out += s[i];
+            i += 1;
+          }
+          return out;
+        }
+
+        function unicodeToInpage(s) {
+          if (!s) return "";
+          const n = s.length;
+          let out = "";
+          for (let i = 0; i < n; ) {
+            const c0 = s.charCodeAt(i);
+
+            // Special multi-char keys (must happen before per-char mapping)
+            // \u06CC\u0626 -> \u0004\u00A4\u0004\u00BF
+            if (c0 === 0x06cc && i + 1 < n && s.charCodeAt(i + 1) === 0x0626) {
+              out += "\u0004\u00A4\u0004\u00BF";
+              i += 2;
+              continue;
+            }
+
+            // \u0627\u0004\u0008 -> \u0004\u0081\u0004\u0008
+            if (
+              c0 === 0x0627 &&
+              i + 2 < n &&
+              s.charCodeAt(i + 1) === 0x0004 &&
+              s.charCodeAt(i + 2) === 0x0008
+            ) {
+              out += "\u0004\u0081\u0004\u0008";
+              i += 3;
+              continue;
+            }
+
+            const rep = UTI[c0];
+            if (rep !== undefined) out += rep;
+            else out += s[i];
+            i += 1;
+          }
+          return out;
+        }
+
+        // =========================
+        // UI wiring
+        // =========================
+        const elInput = document.getElementById("input");
+        const elOutput = document.getElementById("output");
+        const elModeText = document.getElementById("modeText");
+        const elInputTitle = document.getElementById("inputTitle");
+        const elOutputTitle = document.getElementById("outputTitle");
+        const elPerf = document.getElementById("perf");
+        const elInMeta = document.getElementById("inputMeta");
+        const elOutMeta = document.getElementById("outputMeta");
+        const elHeaderTitle = document.getElementById("headerTitle");
+
+        const autoToggle = document.getElementById("autoToggle");
+        const convertBtn = document.getElementById("convertBtn");
+        const swapBtn = document.getElementById("swapBtn");
+        const clearBtn = document.getElementById("clearBtn");
+        const copyBtn = document.getElementById("copyBtn");
+        const pasteBtn = document.getElementById("pasteBtn");
+
+        const MODE_ITU = 0; // InPage -> Unicode
+        const MODE_UTI = 1; // Unicode -> InPage
+        let mode = MODE_ITU;
+
+        function setMode(next) {
+          mode = next;
+          if (mode === MODE_ITU) {
+            elHeaderTitle.textContent = "InPage → Unicode";
+            elModeText.textContent = "InPage → Unicode";
+            elInputTitle.textContent = "InPage";
+            elOutputTitle.textContent = "Urdu Unicode";
+            elInput.style.direction = "ltr";
+            elInput.classList.add("mono");
+            elOutput.style.direction = "rtl";
+            elOutput.classList.remove("mono");
+          } else {
+            elHeaderTitle.textContent = "Unicode → InPage";
+            elModeText.textContent = "Unicode → InPage";
+            elInputTitle.textContent = "Urdu Unicode";
+            elOutputTitle.textContent = "InPage";
+            elInput.style.direction = "rtl";
+            elInput.classList.remove("mono");
+            elOutput.style.direction = "ltr";
+            elOutput.classList.add("mono");
+          }
+          convertLeftToRight();
+        }
+
+        function updateMeta() {
+          elInMeta.textContent = `${elInput.value.length} chars`;
+          elOutMeta.textContent = `${elOutput.value.length} chars`;
+        }
+
+        function convertLeftToRight() {
+          const s = elInput.value;
+          const t0 = performance.now();
+          const out =
+            mode === MODE_ITU ? inpageToUnicode(s) : unicodeToInpage(s);
+          const t1 = performance.now();
+          elOutput.value = out;
+          elPerf.textContent = `Converted in ${(t1 - t0).toFixed(2)} ms`;
+          updateMeta();
+        }
+
+        function convertRightToLeft() {
+          const s = elOutput.value;
+          const t0 = performance.now();
+          const out =
+            mode === MODE_ITU ? unicodeToInpage(s) : inpageToUnicode(s);
+          const t1 = performance.now();
+          elInput.value = out;
+          elPerf.textContent = `Converted in ${(t1 - t0).toFixed(2)} ms`;
+          updateMeta();
+        }
+
+        elInput.addEventListener("input", () => {
+          updateMeta();
+          if (autoToggle.checked) convertLeftToRight();
+        });
+
+        elOutput.addEventListener("input", () => {
+          updateMeta();
+          if (autoToggle.checked) convertRightToLeft();
+        });
+
+        convertBtn.addEventListener("click", convertLeftToRight);
+
+        swapBtn.addEventListener("click", () => {
+          // Swap mode and also swap fields (so user can round-trip quickly)
+          const prevIn = elInput.value;
+          elInput.value = elOutput.value;
+          elOutput.value = prevIn;
+          setMode(mode === MODE_ITU ? MODE_UTI : MODE_ITU);
+        });
+
+        clearBtn.addEventListener("click", () => {
+          elInput.value = "";
+          elOutput.value = "";
+          updateMeta();
+        });
+
+        copyBtn.addEventListener("click", async () => {
+          try {
+            await navigator.clipboard.writeText(elOutput.value);
+            const oldPerf = elPerf.textContent;
+            elPerf.textContent = "Copied ✓";
+            setTimeout(() => (elPerf.textContent = oldPerf), 1500);
+          } catch (e) {
+            elPerf.textContent = "Copy failed";
+          }
+        });
+
+        pasteBtn.addEventListener("click", async () => {
+          try {
+            const t = await navigator.clipboard.readText();
+            elInput.value = t;
+            updateMeta();
+            if (autoToggle.checked) convertLeftToRight();
+          } catch (e) {
+            console.error("Paste failed", e);
+          }
+        });
+
+        // Init
+        setMode(MODE_ITU);
+        updateMeta();
+      })();
+    </script>
+  </body>
+</html>
