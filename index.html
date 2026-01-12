@@ -6,7 +6,84 @@
       name="viewport"
       content="width=device-width,initial-scale=1"
     />
-    <title>Unicode ↔ InPage Converter</title>
+    <title>Urdu Unicode ↔ InPage Converter | Online Converter</title>
+    <meta
+      name="description"
+      content="Convert InPage Urdu text to Unicode and vice-versa instantly. A fast, free, and secure online Urdu text converter for InPage documents."
+    />
+    <meta
+      name="keywords"
+      content="InPage to Unicode, Unicode to InPage, Urdu converter, Urdu text converter, InPage converter, Urdu font converter, InPage Urdu"
+    />
+    <meta
+      name="author"
+      content="InPage Utils"
+    />
+    <meta
+      name="theme-color"
+      content="#1a1c1e"
+    />
+    <link
+      rel="canonical"
+      href="https://inpage.dakheera47.com/"
+    />
+
+    <!-- Open Graph / Facebook -->
+    <meta
+      property="og:type"
+      content="website"
+    />
+    <meta
+      property="og:url"
+      content="https://inpage.dakheera47.com/"
+    />
+    <meta
+      property="og:title"
+      content="Urdu Unicode ↔ InPage Converter"
+    />
+    <meta
+      property="og:description"
+      content="Fast and reliable InPage to Unicode (and vice-versa) Urdu text converter."
+    />
+    <meta
+      property="og:image"
+      content="https://inpage.dakheera47.com/og-image.png"
+    />
+
+    <!-- Twitter -->
+    <meta
+      property="twitter:card"
+      content="summary_large_image"
+    />
+    <meta
+      property="twitter:url"
+      content="https://inpage.dakheera47.com/"
+    />
+    <meta
+      property="twitter:title"
+      content="Urdu Unicode ↔ InPage Converter"
+    />
+    <meta
+      property="twitter:description"
+      content="Fast and reliable InPage to Unicode (and vice-versa) Urdu text converter."
+    />
+    <meta
+      property="twitter:image"
+      content="https://inpage.dakheera47.com/og-image.png"
+    />
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Urdu Unicode ↔ InPage Converter",
+        "description": "An online tool to convert Urdu text between InPage format and Unicode.",
+        "url": "https://inpage.dakheera47.com/",
+        "applicationCategory": "Utility",
+        "operatingSystem": "All"
+      }
+    </script>
 
     <!-- BeerCSS (Material Design 3) -->
     <link
@@ -49,17 +126,19 @@
   <body class="dark">
     <header class="primary">
       <nav>
-        <h5
+        <h1
           class="max"
           id="headerTitle"
+          style="font-size: inherit; margin: 0"
         >
           Unicode ↔ InPage Converter
-        </h5>
+        </h1>
 
         <button
           class="circle transparent"
           id="clearBtn"
           title="Clear"
+          aria-label="Clear all text"
         >
           <i>delete</i>
         </button>
@@ -82,6 +161,7 @@
                   class="chip"
                   id="pasteBtn"
                   title="Paste from clipboard"
+                  aria-label="Paste text from clipboard"
                 >
                   <i>content_paste</i><span>Paste</span>
                 </button>
@@ -100,6 +180,7 @@
                 class="mono"
                 placeholder="Paste text here…"
               ></textarea>
+              <label for="input">Input text</label>
             </div>
 
             <div class="padding left-align row left">
@@ -121,6 +202,7 @@
             class="circle extra transparent"
             id="swapBtn"
             title="Swap direction"
+            aria-label="Swap conversion direction"
           >
             <i>swap_horiz</i>
           </button>
@@ -140,6 +222,7 @@
                   class="chip"
                   id="copyBtn"
                   title="Copy output"
+                  aria-label="Copy output text to clipboard"
                 >
                   <i>content_copy</i><span>Copy</span>
                 </button>
@@ -157,6 +240,7 @@
                 id="output"
                 placeholder="Output…"
               ></textarea>
+              <label for="output">Output text</label>
             </div>
 
             <div class="padding hint small">
@@ -178,7 +262,56 @@
           id="perf"
         ></div>
       </article>
+
+      <article class="round border padding">
+        <h4>About Urdu Unicode & InPage Converter</h4>
+        <p>
+          This online tool allows you to convert
+          <strong>InPage Urdu text</strong> to <strong>Urdu Unicode</strong> and
+          vice-versa. InPage uses a proprietary encoding format that isn't
+          compatible with modern web browsers, social media, or mobile devices.
+          By converting to Unicode, you can share your Urdu content on WhatsApp,
+          Facebook, Twitter, and other digital platforms.
+        </p>
+        <div class="grid">
+          <div class="s12 m6">
+            <h5>How to Convert InPage to Unicode</h5>
+            <ol>
+              <li>Copy your text from an InPage document.</li>
+              <li>Paste it into the "InPage" box above.</li>
+              <li>The tool will automatically convert it to Urdu Unicode.</li>
+              <li>Click "Copy" to use the converted text anywhere.</li>
+            </ol>
+          </div>
+          <div class="s12 m6">
+            <h5>How to Convert Unicode to InPage</h5>
+            <ol>
+              <li>Click the "Swap" button to change direction.</li>
+              <li>Type or paste your Urdu Unicode text.</li>
+              <li>The tool will generate the InPage-compatible code.</li>
+              <li>Copy the output and paste it into your InPage document.</li>
+            </ol>
+          </div>
+        </div>
+        <p class="small hint">
+          Note: This converter is fast, secure, and works entirely in your
+          browser. Your text is never sent to any server, ensuring total
+          privacy.
+        </p>
+      </article>
     </main>
+
+    <footer class="padding center-align">
+      <p class="small">
+        &copy; 2026 Urdu InPage Utils <br>
+        <a
+          href="https://dakheera47.com"
+          class="link"
+        >
+          DaKheera47.com
+        </a>
+      </p>
+    </footer>
 
     <script>
       (() => {
