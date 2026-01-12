@@ -182,18 +182,6 @@
               ></textarea>
               <label for="input">Input text</label>
             </div>
-
-            <div class="padding left-align row left">
-              <label class="switch">
-                <input
-                  id="autoToggle"
-                  type="checkbox"
-                  checked
-                />
-                <span></span>
-              </label>
-              <span class="small">Auto convert</span>
-            </div>
           </article>
         </div>
 
@@ -206,6 +194,10 @@
           >
             <i>swap_horiz</i>
           </button>
+          <div
+            class="small mono"
+            id="perf"
+          ></div>
         </div>
 
         <div class="s12 m5">
@@ -249,19 +241,6 @@
           </article>
         </div>
       </div>
-
-      <article class="round border padding center-align">
-        <button
-          class="button"
-          id="convertBtn"
-        >
-          <i>bolt</i><span>Convert</span>
-        </button>
-        <div
-          class="small mono"
-          id="perf"
-        ></div>
-      </article>
 
       <article class="round border padding">
         <h4>About Urdu Unicode & InPage Converter</h4>
@@ -618,8 +597,6 @@
         const elOutMeta = document.getElementById("outputMeta");
         const elHeaderTitle = document.getElementById("headerTitle");
 
-        const autoToggle = document.getElementById("autoToggle");
-        const convertBtn = document.getElementById("convertBtn");
         const swapBtn = document.getElementById("swapBtn");
         const clearBtn = document.getElementById("clearBtn");
         const copyBtn = document.getElementById("copyBtn");
@@ -665,7 +642,7 @@
             mode === MODE_ITU ? inpageToUnicode(s) : unicodeToInpage(s);
           const t1 = performance.now();
           elOutput.value = out;
-          elPerf.textContent = `Converted in ${(t1 - t0).toFixed(2)} ms`;
+          elPerf.textContent = `${(t1 - t0).toFixed(2)} ms`;
           updateMeta();
         }
 
@@ -676,21 +653,19 @@
             mode === MODE_ITU ? unicodeToInpage(s) : inpageToUnicode(s);
           const t1 = performance.now();
           elInput.value = out;
-          elPerf.textContent = `Converted in ${(t1 - t0).toFixed(2)} ms`;
+          elPerf.textContent = `${(t1 - t0).toFixed(2)} ms`;
           updateMeta();
         }
 
         elInput.addEventListener("input", () => {
           updateMeta();
-          if (autoToggle.checked) convertLeftToRight();
+          convertLeftToRight();
         });
 
         elOutput.addEventListener("input", () => {
           updateMeta();
-          if (autoToggle.checked) convertRightToLeft();
+          convertRightToLeft();
         });
-
-        convertBtn.addEventListener("click", convertLeftToRight);
 
         swapBtn.addEventListener("click", () => {
           // Swap mode and also swap fields (so user can round-trip quickly)
@@ -722,7 +697,7 @@
             const t = await navigator.clipboard.readText();
             elInput.value = t;
             updateMeta();
-            if (autoToggle.checked) convertLeftToRight();
+            convertLeftToRight();
           } catch (e) {
             console.error("Paste failed", e);
           }
