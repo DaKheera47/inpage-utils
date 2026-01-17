@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1"
+    />
+    <title>HTML Tag Stripper | InPage Utils</title>
+    <meta
+      name="description"
+      content="Remove HTML tags and attributes while keeping text content."
+    />
+    <meta
+      name="theme-color"
+      content="#1a1c1e"
+    />
+    <link
+      rel="canonical"
+      href="https://inpage.dakheera47.com/stripper.html"
+    />
+
+    <!-- BeerCSS (Material Design 3) -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/beercss@3.13.0/dist/cdn/beer.min.css"
+      rel="stylesheet"
+    />
+    <script
+      type="module"
+      src="https://cdn.jsdelivr.net/npm/beercss@3.13.0/dist/cdn/beer.min.js"
+    ></script>
+    <script
+      type="module"
+      src="https://cdn.jsdelivr.net/npm/material-dynamic-colors@1.1.2/dist/cdn/material-dynamic-colors.min.js"
+    ></script>
+
+    <style>
+      textarea {
+        unicode-bidi: plaintext;
+        font-size: 1.05rem;
+        line-height: 1.6;
+        min-height: 16rem;
+        resize: vertical;
+      }
+      .mono {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+          "Liberation Mono", "Courier New", monospace;
+      }
+      .hint {
+        opacity: 0.8;
+      }
+      .tight {
+        margin-top: 0.25rem;
+      }
+    </style>
+  </head>
+
+  <body class="dark">
+    <header class="primary">
+      <nav>
+        <h1
+          class="max"
+          style="font-size: inherit; margin: 0"
+        >
+          HTML Tag Stripper
+        </h1>
+
+        <a
+          class="button transparent"
+          href="index.html"
+          aria-label="Back to converter"
+        >
+          Converter
+        </a>
+      </nav>
+    </header>
+
+    <main class="responsive large-padding">
+      <article class="round border">
+        <div class="padding">
+          <div class="row middle">
+            <h4 class="max">Strip HTML tags</h4>
+            <button
+              class="chip"
+              id="stripBtn"
+              title="Remove HTML tags"
+              aria-label="Strip HTML tags"
+            >
+              <i>content_cut</i><span>Strip</span>
+            </button>
+            <button
+              class="chip"
+              id="copyBtn"
+              title="Copy stripped text"
+              aria-label="Copy stripped text"
+            >
+              <i>content_copy</i><span>Copy</span>
+            </button>
+            <button
+              class="chip"
+              id="clearBtn"
+              title="Clear input and output"
+              aria-label="Clear input and output"
+            >
+              <i>delete</i><span>Clear</span>
+            </button>
+          </div>
+          <div
+            class="small hint tight"
+            id="stripMeta"
+          >
+            0 → 0 chars
+          </div>
+        </div>
+
+        <div class="field textarea border">
+          <textarea
+            id="stripInput"
+            class="mono"
+            placeholder="Paste HTML here…"
+          ></textarea>
+          <label for="stripInput">HTML input</label>
+        </div>
+
+        <div class="field textarea border">
+          <textarea
+            id="stripOutput"
+            placeholder="Text without tags…"
+            readonly
+          ></textarea>
+          <label for="stripOutput">Stripped text</label>
+        </div>
+
+        <div class="padding hint small">
+          Click “Strip” to remove tags and attributes while keeping text content.
+        </div>
+      </article>
+    </main>
+
+    <footer class="padding center-align">
+      <p class="small">
+        &copy; 2026 Urdu InPage Utils <br>
+        <a
+          href="https://dakheera47.com"
+          class="link"
+        >
+          DaKheera47.com
+        </a>
+      </p>
+    </footer>
+
+    <script>
+      (() => {
+        const elStripInput = document.getElementById("stripInput");
+        const elStripOutput = document.getElementById("stripOutput");
+        const elStripMeta = document.getElementById("stripMeta");
+        const stripBtn = document.getElementById("stripBtn");
+        const copyBtn = document.getElementById("copyBtn");
+        const clearBtn = document.getElementById("clearBtn");
+
+        function stripHtmlTags(text) {
+          const holder = document.createElement("div");
+          holder.innerHTML = text;
+          return holder.textContent || "";
+        }
+
+        function updateStripMeta() {
+          const inLen = elStripInput.value.length;
+          const outLen = elStripOutput.value.length;
+          elStripMeta.textContent = `${inLen} → ${outLen} chars`;
+        }
+
+        stripBtn.addEventListener("click", () => {
+          const cleaned = stripHtmlTags(elStripInput.value);
+          elStripOutput.value = cleaned;
+          updateStripMeta();
+        });
+
+        copyBtn.addEventListener("click", async () => {
+          try {
+            await navigator.clipboard.writeText(elStripOutput.value);
+          } catch (e) {
+            console.error("Copy failed", e);
+          }
+        });
+
+        clearBtn.addEventListener("click", () => {
+          elStripInput.value = "";
+          elStripOutput.value = "";
+          updateStripMeta();
+        });
+
+        updateStripMeta();
+      })();
+    </script>
+  </body>
+</html>
