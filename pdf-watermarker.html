@@ -148,6 +148,19 @@
                 <label>Tiling Density</label>
               </div>
             </div>
+            <div class="s12 m3">
+              <div class="field label border">
+                <input
+                  id="fontSize"
+                  type="number"
+                  min="10"
+                  max="200"
+                  step="1"
+                  value="46"
+                />
+                <label>Font Size</label>
+              </div>
+            </div>
           </div>
 
           <div class="row padding">
@@ -198,6 +211,7 @@
       const colorEl = document.getElementById("color");
       const opacityEl = document.getElementById("opacity");
       const tilingEl = document.getElementById("tiling");
+      const fontSizeEl = document.getElementById("fontSize");
 
       // Load settings from localStorage
       const STORAGE_KEY = "pdf_watermarker_settings";
@@ -216,6 +230,7 @@
             }
             if (settings.opacity) opacityEl.value = settings.opacity;
             if (settings.tiling) tilingEl.value = settings.tiling;
+            if (settings.fontSize) fontSizeEl.value = settings.fontSize;
           }
         } catch (e) {
           console.error("Failed to load settings", e);
@@ -229,6 +244,7 @@
             color: colorEl.value,
             opacity: opacityEl.value,
             tiling: tilingEl.value,
+            fontSize: fontSizeEl.value,
           };
           localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
         } catch (e) {
@@ -241,6 +257,7 @@
       colorEl.addEventListener("input", saveSettings);
       opacityEl.addEventListener("input", saveSettings);
       tilingEl.addEventListener("input", saveSettings);
+      fontSizeEl.addEventListener("input", saveSettings);
 
       function setButtonState() {
         goEl.disabled = !pdfFileEl.files?.[0];
@@ -261,7 +278,7 @@
         try {
           const opacity = clamp(Number(opacityEl.value), 0, 1);
           const tiling = Math.max(1, Number(tilingEl.value) || 3);
-          const fontSize = 32; // Fixed font size
+          const fontSize = Math.max(1, Number(fontSizeEl.value) || 46);
 
           // Gap multiplier is now inversely proportional to tiling value
           // tiling=1 -> very sparse, tiling=10 -> very dense
