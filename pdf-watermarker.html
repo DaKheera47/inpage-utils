@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width,initial-scale=1"
+    />
+    <title>PDF Watermarker | InPage Utils</title>
+    <meta
+      name="description"
+      content="Client-side PDF watermarking tool. Add tiled diagonal watermarks to your PDF documents securely."
+    />
+    <meta
+      name="theme-color"
+      content="#1a1c1e"
+    />
+
+    <!-- BeerCSS (Material Design 3) -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/beercss@3.13.0/dist/cdn/beer.min.css"
+      rel="stylesheet"
+    />
+    <script
+      type="module"
+      src="https://cdn.jsdelivr.net/npm/beercss@3.13.0/dist/cdn/beer.min.js"
+    ></script>
+    <script
+      type="module"
+      src="https://cdn.jsdelivr.net/npm/material-dynamic-colors@1.1.2/dist/cdn/material-dynamic-colors.min.js"
+    ></script>
+
+    <style>
+      .row {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .hint {
+        opacity: 0.8;
+      }
+      input[type="number"] {
+        width: 100%;
+      }
+    </style>
+  </head>
+
+  <body class="dark">
+    <header class="primary">
+      <nav>
+        <h1
+          class="max"
+          style="font-size: inherit; margin: 0"
+        >
+          PDF Watermarker
+        </h1>
+
+        <a
+          class="button transparent"
+          href="index.html"
+          aria-label="Back to converter"
+        >
+          Converter
+        </a>
+
+        <a
+          class="button transparent"
+          href="stripper.html"
+          aria-label="HTML tag stripper"
+        >
+          HTML Stripper
+        </a>
+      </nav>
+    </header>
+
+    <main class="responsive large-padding">
+      <article class="round border">
+        <div class="padding">
+          <h4 class="max">Watermark Settings</h4>
+          <p class="small hint">
+            Add a tiled diagonal watermark to your PDF. All processing happens
+            locally in your browser.
+          </p>
+        </div>
+
+        <div class="padding">
+          <div class="grid">
+            <div class="s12">
+              <div class="field label border">
+                <input
+                  id="pdfFile"
+                  type="file"
+                  accept="application/pdf"
+                />
+                <input type="text" />
+                <label>Select PDF File</label>
+                <i>attach_file</i>
+              </div>
+            </div>
+
+            <div class="s12 m6">
+              <div class="field label border">
+                <input
+                  id="watermarkText"
+                  type="text"
+                  value="www.mumtazurdu.com"
+                />
+                <label>Watermark Text</label>
+                <i>title</i>
+              </div>
+            </div>
+
+            <div class="s12 m3">
+              <div class="field label border">
+                <input
+                  id="color"
+                  type="color"
+                  value="#333333"
+                />
+                <input type="text" />
+                <label>Color</label>
+              </div>
+            </div>
+            <div class="s12 m3">
+              <div class="field label border">
+                <input
+                  id="opacity"
+                  type="number"
+                  min="0"
+                  max="1"
+                  step="0.05"
+                  value="0.40"
+                />
+                <label>Opacity (0-1)</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="row padding">
+            <button
+              id="go"
+              class="large"
+              disabled
+            >
+              <i>download</i>
+              <span>Watermark & Download</span>
+            </button>
+          </div>
+
+          <div class="padding hint small">
+            Watermark rotation is fixed to 45°. <br />
+            Font <code>Arialic Hollow.ttf</code> is automatically loaded.
+          </div>
+        </div>
+      </article>
+    </main>
+
+    <footer class="padding center-align">
+      <p class="small">
+        &copy; 2026 Urdu InPage Utils <br />
+        <a
+          href="https://dakheera47.com"
+          class="link"
+        >
+          DaKheera47.com
+        </a>
+      </p>
+    </footer>
+
+    <script type="module">
+      import {
+        PDFDocument,
+        rgb,
+        degrees,
+      } from "https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/+esm";
+      import fontkit from "https://cdn.jsdelivr.net/npm/@pdf-lib/fontkit@1.1.1/+esm";
+
+      const ROTATION_DEG = 45;
+      const FONT_URL = "./Arialic Hollow.ttf";
+
+      const pdfFileEl = document.getElementById("pdfFile");
+      const watermarkTextEl = document.getElementById("watermarkText");
+      const goEl = document.getElementById("go");
+
+      const colorEl = document.getElementById("color");
+      const opacityEl = document.getElementById("opacity");
+
+      // Load settings from localStorage
+      const STORAGE_KEY = "pdf_watermarker_settings";
+      function loadSettings() {
+        try {
+          const saved = localStorage.getItem(STORAGE_KEY);
+          if (saved) {
+            const settings = JSON.parse(saved);
+            if (settings.text) watermarkTextEl.value = settings.text;
+            if (settings.color) {
+              colorEl.value = settings.color;
+              // Update the visible text input that BeerCSS uses for color fields
+              const textInput = colorEl.parentElement.querySelector('input[type="text"]');
+              if (textInput) textInput.value = settings.color;
+            }
+            if (settings.opacity) opacityEl.value = settings.opacity;
+          }
+        } catch (e) {
+          console.error("Failed to load settings", e);
+        }
+      }
+
+      function saveSettings() {
+        try {
+          const settings = {
+            text: watermarkTextEl.value,
+            color: colorEl.value,
+            opacity: opacityEl.value,
+          };
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+        } catch (e) {
+          console.error("Failed to save settings", e);
+        }
+      }
+
+      // Attach change listeners to save settings automatically
+      watermarkTextEl.addEventListener("input", saveSettings);
+      colorEl.addEventListener("input", saveSettings);
+      opacityEl.addEventListener("input", saveSettings);
+
+      function setButtonState() {
+        goEl.disabled = !pdfFileEl.files?.[0];
+      }
+      pdfFileEl.addEventListener("change", setButtonState);
+
+      goEl.addEventListener("click", async () => {
+        const pdfFile = pdfFileEl.files?.[0];
+        const watermarkText = watermarkTextEl.value || "www.mumtazurdu.com";
+        if (!pdfFile) return;
+
+        saveSettings(); // Ensure settings are saved before processing
+
+        goEl.disabled = true;
+        const originalText = goEl.querySelector("span").textContent;
+        goEl.querySelector("span").textContent = "Processing...";
+
+        try {
+          const opacity = clamp(Number(opacityEl.value), 0, 1);
+          const fontSize = 64; // Fixed font size
+          const gapMult = 1.8; // Fixed gap multiplier
+
+          const { r, g, b } = hexToRgb01(colorEl.value);
+
+          const pdfBytes = await pdfFile.arrayBuffer();
+          
+          // Auto-load font
+          const ttfBytes = await fetch(FONT_URL).then(res => {
+            if (!res.ok) throw new Error("Failed to load font file: " + FONT_URL);
+            return res.arrayBuffer();
+          });
+
+          const pdfDoc = await PDFDocument.load(pdfBytes, {
+            ignoreEncryption: false,
+          });
+          pdfDoc.registerFontkit(fontkit);
+
+          const embeddedFont = await pdfDoc.embedFont(ttfBytes, {
+            subset: true,
+          });
+
+          const pages = pdfDoc.getPages();
+
+          for (const page of pages) {
+            const { width, height } = page.getSize();
+
+            const textWidth = embeddedFont.widthOfTextAtSize(
+              watermarkText,
+              fontSize
+            );
+            const textHeight = embeddedFont.heightAtSize(fontSize);
+
+            // Calculate centering offsets for rotated text
+            const rad = (ROTATION_DEG * Math.PI) / 180;
+            const cos = Math.cos(rad);
+            const sin = Math.sin(rad);
+
+            // Center of rotated text relative to its bottom-left origin
+            const mx = (textWidth / 2) * cos - (textHeight / 2) * sin;
+            const my = (textWidth / 2) * sin + (textHeight / 2) * cos;
+
+            const centerX = width / 2;
+            const centerY = height / 2;
+
+            // Spacing between repeats
+            const stepX = (textWidth + fontSize * 2) * gapMult;
+            const stepY = (textHeight + fontSize * 5) * gapMult;
+
+            // Calculate range to cover the whole page plus overscan for rotation
+            const limit = Math.ceil(Math.max(width, height) / Math.min(stepX, stepY)) + 2;
+
+            for (let j = -limit; j <= limit; j++) {
+              for (let i = -limit; i <= limit; i++) {
+                // Staggered grid (brick pattern) for better distribution
+                const shiftX = (j % 2 === 0) ? 0 : stepX / 2;
+                
+                const x = centerX - mx + i * stepX + shiftX;
+                const y = centerY - my + j * stepY;
+
+                page.drawText(watermarkText, {
+                  x,
+                  y,
+                  size: fontSize,
+                  font: embeddedFont,
+                  color: rgb(r, g, b),
+                  rotate: degrees(ROTATION_DEG),
+                  opacity,
+                });
+              }
+            }
+          }
+
+          const outBytes = await pdfDoc.save({ useObjectStreams: true });
+
+          downloadBlob(
+            new Blob([outBytes], { type: "application/pdf" }),
+            appendToName(pdfFile.name, "-watermarked")
+          );
+        } catch (err) {
+          console.error(err);
+          alert("Error processing PDF: " + err.message);
+        } finally {
+          goEl.disabled = false;
+          goEl.querySelector("span").textContent = originalText;
+        }
+      });
+
+      // Initialize
+      loadSettings();
+    </script>
+  </body>
+</html>
