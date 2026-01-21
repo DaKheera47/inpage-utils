@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -130,9 +130,22 @@
                   min="0"
                   max="1"
                   step="0.05"
-                  value="0.40"
+                  value="0.30"
                 />
                 <label>Opacity (0-1)</label>
+              </div>
+            </div>
+            <div class="s12 m3">
+              <div class="field label border">
+                <input
+                  id="tiling"
+                  type="number"
+                  min="1"
+                  max="20"
+                  step="1"
+                  value="3"
+                />
+                <label>Tiling Density</label>
               </div>
             </div>
           </div>
@@ -146,11 +159,10 @@
               <i>download</i>
               <span>Watermark & Download</span>
             </button>
-          </div>
-
-          <div class="padding hint small">
-            Watermark rotation is fixed to 45°. <br />
-            Font <code>Arialic Hollow.ttf</code> is automatically loaded.
+            <div class="hint small">
+              Watermark rotation is fixed to 45°. <br />
+              Font <code>Arialic Hollow.ttf</code> is automatically loaded.
+            </div>
           </div>
         </div>
       </article>
@@ -185,6 +197,7 @@
 
       const colorEl = document.getElementById("color");
       const opacityEl = document.getElementById("opacity");
+      const tilingEl = document.getElementById("tiling");
 
       // Load settings from localStorage
       const STORAGE_KEY = "pdf_watermarker_settings";
@@ -197,10 +210,12 @@
             if (settings.color) {
               colorEl.value = settings.color;
               // Update the visible text input that BeerCSS uses for color fields
-              const textInput = colorEl.parentElement.querySelector('input[type="text"]');
+              const textInput =
+                colorEl.parentElement.querySelector('input[type="text"]');
               if (textInput) textInput.value = settings.color;
             }
             if (settings.opacity) opacityEl.value = settings.opacity;
+            if (settings.tiling) tilingEl.value = settings.tiling;
           }
         } catch (e) {
           console.error("Failed to load settings", e);
@@ -213,6 +228,7 @@
             text: watermarkTextEl.value,
             color: colorEl.value,
             opacity: opacityEl.value,
+            tiling: tilingEl.value,
           };
           localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
         } catch (e) {
@@ -224,6 +240,7 @@
       watermarkTextEl.addEventListener("input", saveSettings);
       colorEl.addEventListener("input", saveSettings);
       opacityEl.addEventListener("input", saveSettings);
+      tilingEl.addEventListener("input", saveSettings);
 
       function setButtonState() {
         goEl.disabled = !pdfFileEl.files?.[0];
@@ -243,16 +260,21 @@
 
         try {
           const opacity = clamp(Number(opacityEl.value), 0, 1);
-          const fontSize = 64; // Fixed font size
-          const gapMult = 1.8; // Fixed gap multiplier
+          const tiling = Math.max(1, Number(tilingEl.value) || 3);
+          const fontSize = 32; // Fixed font size
+
+          // Gap multiplier is now inversely proportional to tiling value
+          // tiling=1 -> very sparse, tiling=10 -> very dense
+          const gapMult = 10 / tiling;
 
           const { r, g, b } = hexToRgb01(colorEl.value);
 
           const pdfBytes = await pdfFile.arrayBuffer();
-          
+
           // Auto-load font
-          const ttfBytes = await fetch(FONT_URL).then(res => {
-            if (!res.ok) throw new Error("Failed to load font file: " + FONT_URL);
+          const ttfBytes = await fetch(FONT_URL).then((res) => {
+            if (!res.ok)
+              throw new Error("Failed to load font file: " + FONT_URL);
             return res.arrayBuffer();
           });
 
@@ -272,7 +294,7 @@
 
             const textWidth = embeddedFont.widthOfTextAtSize(
               watermarkText,
-              fontSize
+              fontSize,
             );
             const textHeight = embeddedFont.heightAtSize(fontSize);
 
@@ -289,20 +311,27 @@
             const centerY = height / 2;
 
             // Spacing between repeats
-            const stepX = (textWidth + fontSize * 2) * gapMult;
-            const stepY = (textHeight + fontSize * 5) * gapMult;
+            // Adjusted base values to be larger so they don't overlap too much.
+            // tiling=1 -> Sparse (step = 1000pt, roughly one per page)
+            // tiling=5 -> Balanced (step = 200pt)
+            // tiling=10 -> Dense (step = 100pt)
+            const stepX = 1000 / tiling;
+            const stepY = 800 / tiling;
 
-            // Calculate range to cover the whole page plus overscan for rotation
-            const limit = Math.ceil(Math.max(width, height) / Math.min(stepX, stepY)) + 2;
+            const limit =
+              Math.ceil(Math.max(width, height) / Math.min(stepX, stepY)) + 2;
 
             for (let j = -limit; j <= limit; j++) {
               for (let i = -limit; i <= limit; i++) {
-                // Staggered grid (brick pattern) for better distribution
-                const shiftX = (j % 2 === 0) ? 0 : stepX / 2;
-                
+                // Staggered grid (brick pattern)
+                const shiftX = j % 2 === 0 ? 0 : stepX / 2;
+
                 const x = centerX - mx + i * stepX + shiftX;
                 const y = centerY - my + j * stepY;
 
+                // Simple visibility check to avoid drawing thousands of unnecessary elements
+                // though drawing outside the page is technically fine in PDF, it adds bloat.
+                // We'll let pdf-lib handle the "clipping" by just drawing.
                 page.drawText(watermarkText, {
                   x,
                   y,
@@ -320,7 +349,7 @@
 
           downloadBlob(
             new Blob([outBytes], { type: "application/pdf" }),
-            appendToName(pdfFile.name, "-watermarked")
+            appendToName(pdfFile.name, "-watermarked"),
           );
         } catch (err) {
           console.error(err);
@@ -330,6 +359,38 @@
           goEl.querySelector("span").textContent = originalText;
         }
       });
+
+      function hexToRgb01(hex) {
+        const m = /^#?([0-9a-f]{6})$/i.exec(hex);
+        if (!m) return { r: 0.2, g: 0.2, b: 0.2 };
+        const n = parseInt(m[1], 16);
+        const r = (n >> 16) & 255;
+        const g = (n >> 8) & 255;
+        const b = n & 255;
+        return { r: r / 255, g: g / 255, b: b / 255 };
+      }
+
+      function downloadBlob(blob, filename) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+      }
+
+      function appendToName(name, suffix) {
+        const lower = name.toLowerCase();
+        const idx = lower.lastIndexOf(".pdf");
+        if (idx === -1) return name + suffix + ".pdf";
+        return name.slice(0, idx) + suffix + name.slice(idx);
+      }
+
+      function clamp(v, lo, hi) {
+        return Math.min(hi, Math.max(lo, v));
+      }
 
       // Initialize
       loadSettings();
