@@ -1,16 +1,32 @@
-# Urdu Unicode ↔ InPage Converter
+# Urdu InPage Utils
 
-A fast, client-side web utility to convert Urdu text between InPage encoding and Unicode.
+Client-side web utilities for Urdu text conversion and PDF watermarking.
 
-## Features
-- **Instant Conversion**: Works as you type.
-- **Bi-directional**: Convert InPage to Unicode and Unicode back to InPage.
-- **Secure**: All processing happens in the browser. No data is sent to any server.
-- **SEO Optimized**: Built with semantic HTML and structured data.
-- **Responsive**: Material Design 3 interface using BeerCSS.
+## Apps
+- `index.html`: Unicode to InPage and InPage to Unicode converter
+- `pdf-watermarker.html`: PDF watermarker
+- `stripper.html`: HTML tag stripper
 
-## Usage
-Simply open `index.html` in any modern web browser or visit the hosted version at [https://inpage.dakheera47.com/](https://inpage.dakheera47.com/).
+## Local Usage
+Open any of the HTML files directly in a modern browser.
+
+## Docker
+Build the image:
+
+```bash
+docker build -t inpage-utils .
+```
+
+Run it on port `8055`:
+
+```bash
+docker run --rm -p 8055:8055 inpage-utils
+```
+
+Then open:
+- `http://localhost:8055/` for the PDF watermarker
+- `http://localhost:8055/index.html` for the converter
+- `http://localhost:8055/stripper.html` for the HTML stripper
 
 ## License
 MIT

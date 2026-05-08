@@ -111,6 +111,22 @@
               </div>
             </div>
 
+            <div class="s12 m6">
+              <div class="field label border">
+                <input
+                  id="pageRanges"
+                  type="text"
+                  placeholder="All pages"
+                />
+                <label>Page Ranges</label>
+                <i>filter_1</i>
+              </div>
+              <div class="small hint padding">
+                Leave blank for all pages. Examples: <code>1</code>,
+                <code>1,3,5-8</code>, <code>2-4,9</code>
+              </div>
+            </div>
+
             <div class="s12 m3">
               <div class="field label border">
                 <input
@@ -206,6 +222,7 @@
 
       const pdfFileEl = document.getElementById("pdfFile");
       const watermarkTextEl = document.getElementById("watermarkText");
+      const pageRangesEl = document.getElementById("pageRanges");
       const goEl = document.getElementById("go");
 
       const colorEl = document.getElementById("color");
@@ -221,6 +238,9 @@
           if (saved) {
             const settings = JSON.parse(saved);
             if (settings.text) watermarkTextEl.value = settings.text;
+            if (settings.pageRanges !== undefined) {
+              pageRangesEl.value = settings.pageRanges;
+            }
             if (settings.color) {
               colorEl.value = settings.color;
               // Update the visible text input that BeerCSS uses for color fields
@@ -241,6 +261,7 @@
         try {
           const settings = {
             text: watermarkTextEl.value,
+            pageRanges: pageRangesEl.value,
             color: colorEl.value,
             opacity: opacityEl.value,
             tiling: tilingEl.value,
@@ -254,6 +275,7 @@
 
       // Attach change listeners to save settings automatically
       watermarkTextEl.addEventListener("input", saveSettings);
+      pageRangesEl.addEventListener("input", saveSettings);
       colorEl.addEventListener("input", saveSettings);
       opacityEl.addEventListener("input", saveSettings);
       tilingEl.addEventListener("input", saveSettings);
@@ -267,6 +289,7 @@
       goEl.addEventListener("click", async () => {
         const pdfFile = pdfFileEl.files?.[0];
         const watermarkText = watermarkTextEl.value || "www.mumtazurdu.com";
+        const pageRangesText = pageRangesEl.value.trim();
         if (!pdfFile) return;
 
         saveSettings(); // Ensure settings are saved before processing
@@ -305,8 +328,10 @@
           });
 
           const pages = pdfDoc.getPages();
+          const pageIndexes = parsePageRanges(pageRangesText, pages.length);
 
-          for (const page of pages) {
+          for (const pageIndex of pageIndexes) {
+            const page = pages[pageIndex];
             const { width, height } = page.getSize();
 
             const textWidth = embeddedFont.widthOfTextAtSize(
@@ -407,6 +432,63 @@
 
       function clamp(v, lo, hi) {
         return Math.min(hi, Math.max(lo, v));
+      }
+
+      function parsePageRanges(input, totalPages) {
+        if (!input) {
+          return Array.from({ length: totalPages }, (_, index) => index);
+        }
+
+        const pageIndexes = new Set();
+        const segments = input.split(",");
+
+        for (const rawSegment of segments) {
+          const segment = rawSegment.trim();
+
+          if (!segment) {
+            throw new Error(
+              "Invalid page ranges. Use comma-separated page numbers or ranges like 1,3-5.",
+            );
+          }
+
+          const rangeMatch = /^(\d+)\s*-\s*(\d+)$/.exec(segment);
+          if (rangeMatch) {
+            const start = Number(rangeMatch[1]);
+            const end = Number(rangeMatch[2]);
+
+            if (start > end) {
+              throw new Error(`Invalid range "${segment}". Start page must be before end page.`);
+            }
+
+            validatePageNumber(start, totalPages);
+            validatePageNumber(end, totalPages);
+
+            for (let page = start; page <= end; page++) {
+              pageIndexes.add(page - 1);
+            }
+            continue;
+          }
+
+          if (!/^\d+$/.test(segment)) {
+            throw new Error(
+              `Invalid page range segment "${segment}". Use numbers like 2 or ranges like 4-7.`,
+            );
+          }
+
+          const page = Number(segment);
+          validatePageNumber(page, totalPages);
+          pageIndexes.add(page - 1);
+        }
+
+        return [...pageIndexes].sort((a, b) => a - b);
+      }
+
+      function validatePageNumber(page, totalPages) {
+        if (page < 1 || page > totalPages) {
+          throw new Error(
+            `Page ${page} is out of range. This PDF has ${totalPages} page${totalPages === 1 ? "" : "s"}.`,
+          );
+        }
       }
 
       // Initialize
